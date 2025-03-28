@@ -48,8 +48,8 @@ const VoucherForm = () => {
     const userInfo = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo", {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    setUser(userInfo.data);
-    toast.success(`Logged in as ${userInfo.data.email}`);
+    setUser(userInfo.data); // Store user info (name, picture, etc.)
+    toast.success(`Logged in as ${userInfo.data.name}`); // Show name in toast
   };
 
   const login = useGoogleLogin({
@@ -62,6 +62,7 @@ const VoucherForm = () => {
     redirect_uri: "http://localhost:3000",
   });
 
+  // Rest of your existing functions (fetchVouchers, useEffect hooks, etc.) remain unchanged
   const fetchVouchers = async () => {
     if (!token) return;
     try {
@@ -271,7 +272,18 @@ const VoucherForm = () => {
       ) : (
         <div className="voucher-container">
           <div className="user-info">
-            <p>Logged in as: {user?.email}</p>
+            {/* Display user image and name next to logout */}
+            {user && (
+              <div className="user-profile">
+                <img
+                  src={user.picture}
+                  alt={user.name}
+                  className="user-avatar"
+                  referrerPolicy="no-referrer" // Required for Google profile pics
+                />
+                <span className="user-name">{user.name}</span>
+              </div>
+            )}
             <button onClick={() => setToken(null)} className="logout-button">
               Logout
             </button>
