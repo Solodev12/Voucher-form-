@@ -1,38 +1,505 @@
-.App {
-  text-align: center;
+#root {
+  display: flex;
+  justify-content: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
+body {
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   min-height: 100vh;
+  background-color: #f4f4f4;
+  font-size: 18px;
+}
+
+.voucher-container {
+  position: relative;
+  background: white;
+  padding: 30px;
+  box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 1100px;
+  border-radius: 12px;
+}
+
+.voucher-info {
+  display: flex;
+  justify-content: flex-end;
+  gap: 25px;
+  margin-bottom: 25px;
+}
+
+.voucher-info .form-group,
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #4b4b4b;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.form-group input[type="text"],
+.form-group input[type="date"],
+.form-group input[type="number"],
+.amount-inputs input,
+.signature input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 18px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+input:focus {
+  outline: 3px solid #7c4dff;
+}
+
+.amount-details {
+  margin-bottom: 40px;
+}
+
+.amount-details label,
+.signatures label,
+.signature label {
+  color: #4b4b4b;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.amount-inputs {
+  display: flex;
+  gap: 15px;
+}
+
+.signatures {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 30px;
+}
+
+.signature {
+  flex: 1;
+  min-width: 200px;
+  margin-bottom: 20px;
+}
+
+#filterImageContainer {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  width: 350px;
+  height: 120px;
+  margin: 15px 0;
+}
+
+#filterImage {
+  object-fit: contain;
+  width: 200px;
+  height: auto;
+  display: none;
+}
+
+select {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: white;
+  font-size: 18px;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+select:focus-visible {
+  outline: 3px solid #7c4dff;
+  border: none;
+}
+
+.wrapper {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+input[type="date"] {
+  padding: 10px;
+  width: 180px;
+  font-size: 18px;
+}
+
+.submit-button {
+  background-color: #6c5ce7;
+  color: white;
+  font-size: 20px;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.submit-button:hover {
+  background-color: #5a4cd1;
+  transition: background-color 0.2s;
+}
+
+.view-vouchers-button {
+  background-color: #26A69A;
+  color: white;
+  font-size: 20px;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-left: 15px;
+  transition: background-color 0.2s;
+}
+
+.view-vouchers-button:hover {
+  background-color: #00897B;
+}
+
+.filter-section {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.voucher-list-view {
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.1);
+}
+
+.voucher-list {
+  margin-top: 20px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.voucher-item {
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.voucher-item p {
+  margin: 5px 0;
+  font-size: 16px;
+  color: #4b4b4b;
+}
+
+.voucher-item a {
+  color: #6c5ce7;
+  text-decoration: none;
+}
+
+.voucher-item a.sheet-link {
+  color: #26A69A;
+  /* margin-left: 10px; */
+}
+
+.voucher-item a:hover,
+.voucher-item a.sheet-link:hover {
+  text-decoration: underline;
+}
+
+.back-button {
+  background-color: #6c5ce7;
+  color: white;
+  font-size: 20px;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: background-color 0.2s;
+}
+
+.back-button:hover {
+  background-color: #5a4cd1;
+}
+
+div.form-group.m0 {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.login-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: stretch;
+  height: 100vh;
+  width: 100vw;
+  background-color: #f4f4f4; /* Fallback background */
+}
+
+.login-image {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.login-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Ensures image fills the left side */
+}
+
+.login-content {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
+  align-items: center;
+  background-color: white; /* White background for login area */
+  padding: 30px;
+}
+
+.login-content h2 {
+  margin-bottom: 20px;
+  color: #4b4b4b; /* Matches form labels */
+  font-size: 24px;
+}
+
+.google-login-button {
+  background-color: #6c5ce7;
   color: white;
+  font-size: 18px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
-.App-link {
-  color: #61dafb;
+.google-login-button:hover {
+  background-color: #5a4cd1;
+  transition: background-color 0.2s;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.user-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.logout-button {
+  background-color: #6c5ce7;
+  color: white;
+  font-size: 16px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.logout-button:hover {
+  background-color: #5a4cd1;
+  transition: background-color 0.2s;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.spinner {
+  border: 10px solid #f3f3f3;
+  border-top: 10px solid #6c5ce7;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.voucher-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+.edit-button {
+  padding: 5px 10px;
+  background-color: #66BB6A;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.edit-button:hover {
+  background-color: #4CAF50;
+}
+
+.delete-button {
+  padding: 5px 10px;
+  background-color: #EF5350;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.delete-button:hover {
+  background-color: #F44336;
+}
+
+@media only screen and (max-width: 900px) {
+  .voucher-container {
+    max-width: 700px;
+    padding: 20px;
   }
-  to {
-    transform: rotate(360deg);
+
+  .wrapper {
+    flex-direction: column;
+  }
+
+  .signatures {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .signature {
+    min-width: 100%;
+  }
+
+  #filterImageContainer {
+    width: 100%;
+    height: 100px;
+  }
+
+  #filterImage {
+    width: 150px;
+  }
+
+  .user-info {
+    max-width: 700px;
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+
+  .form-group.m0 {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .filter-section {
+    flex-direction: column;
+  }
+
+  .voucher-item {
+    padding: 10px;
+  }
+
+  .login-container {
+    flex-direction: column; /* Stack image and content vertically */
+  }
+
+  .login-image,
+  .login-content {
+    flex: none; /* Remove flex growth */
+    width: 100%; /* Full width on smaller screens */
+    height: 50vh; /* Split height evenly */
+  }
+}
+
+@media only screen and (max-width: 600px) {
+  body {
+    font-size: 16px;
+  }
+
+  .voucher-container {
+    padding: 15px;
+    max-width: 100%;
+    margin: 10px;
+  }
+
+  .form-group label,
+  .amount-details label,
+  .signatures label,
+  .signature label {
+    font-size: 18px;
+  }
+
+  .form-group input[type="text"],
+  .form-group input[type="date"],
+  .form-group input[type="number"],
+  .amount-inputs input,
+  .signature input,
+  select {
+    font-size: 16px;
+    padding: 10px;
+  }
+
+  .voucher-info {
+    flex-direction: column;
+    gap: 15px;
+    justify-content: flex-start;
+  }
+
+  input[type="date"] {
+    width: 100%;
+  }
+
+  .submit-button,
+  .view-vouchers-button,
+  .back-button,
+  .google-login-button {
+    font-size: 18px;
+    padding: 10px 20px;
+    width: 100%;
+  }
+
+  .logout-button {
+    font-size: 16px;
+    padding: 5px 10px;
+  }
+
+  .edit-button,
+  .delete-button {
+    font-size: 16px;
+    padding: 5px 10px;
+    width: 100%;
+  }
+
+  .login-content {
+    padding: 20px; /* Reduce padding on small screens */
+  }
+
+  .login-content h2 {
+    font-size: 20px; /* Slightly smaller heading */
   }
 }
