@@ -45,11 +45,16 @@ const VoucherForm = () => {
     const accessToken = response.access_token;
     setToken(accessToken);
 
-    const userInfo = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo", {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    setUser(userInfo.data); // Store user info (name, picture, etc.)
-    toast.success(`Logged in as ${userInfo.data.name}`); // Show name in toast
+    try {
+      const userInfo = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      setUser(userInfo.data);
+      toast.success(`Logged in as ${userInfo.data.name}`);
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+      toast.error("Failed to fetch user info");
+    }
   };
 
   const login = useGoogleLogin({
@@ -59,10 +64,9 @@ const VoucherForm = () => {
       toast.error("Google Login Failed");
     },
     scope: "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive",
-    redirect_uri: "http://localhost:3000",
+    redirect_uri: "http://localhost:3000", // Update this for production
   });
 
-  // Rest of your existing functions (fetchVouchers, useEffect hooks, etc.) remain unchanged
   const fetchVouchers = async () => {
     if (!token) return;
     try {
@@ -117,7 +121,7 @@ const VoucherForm = () => {
       }
     };
 
-    if (formData.filter) {
+    if (formData.filter && !formData.voucherNo) { // Only fetch if voucherNo is empty
       fetchVoucherNumber(formData.filter);
     }
   }, [formData.filter, token, showVouchers]);
@@ -157,7 +161,8 @@ const VoucherForm = () => {
     try {
       setFormLoading(true);
       let response;
-      if (formData.voucherNo && vouchers.some(v => v.voucherNo === formData.voucherNo)) {
+      const isEditing = formData.voucherNo && vouchers.some(v => v.voucherNo === formData.voucherNo);
+      if (isEditing) {
         response = await axios.put(
           `${url}/vouchers/${formData.voucherNo}`,
           formData,
@@ -173,32 +178,32 @@ const VoucherForm = () => {
 
       if (response.status === 200 || response.status === 201) {
         toast.success(response.data.message);
-        setFormData(initialValues);
-        if (showVouchers) fetchVouchers();
+        setFormData(initialValues); // Reset form
+        if (showVouchers) fetchVouchers(); // Refresh voucher list
       } else {
-        throw new Error(response.data.error);
+        throw new Error(response.data.error || "Unknown error");
       }
     } catch (error) {
       console.error("Error submitting data:", error.message);
-      toast.error("Failed to submit data: " + error.message);
+      toast.error("Failed to submit data: " + (error.response?.data?.error || error.message));
     } finally {
       setFormLoading(false);
     }
   };
 
-  const handleEditVoucher = async (voucher) => {
+  const handleEditVoucher = (voucher) => {
     setFormData({
       filter: voucher.company,
       voucherNo: voucher.voucherNo,
       date: voucher.date.split('T')[0],
       payTo: voucher.payTo,
-      accountHead: voucher.accountHead,
+      accountHead: voucher.accountHead || "",
       account: voucher.account,
       amount: voucher.amount,
       amountRs: convertNumberToWords(parseFloat(voucher.amount)),
-      checkedBy: voucher.checkedBy || '',
-      approvedBy: voucher.approvedBy || '',
-      receiverSignature: voucher.receiverSignature || ''
+      checkedBy: voucher.checkedBy || "",
+      approvedBy: voucher.approvedBy || "",
+      receiverSignature: voucher.receiverSignature || "",
     });
     setShowVouchers(false);
     toast.info("Voucher loaded for editing. Make changes and submit to update.");
@@ -206,13 +211,13 @@ const VoucherForm = () => {
 
   const handleDeleteVoucher = async (voucherNo) => {
     const result = await Swal.fire({
-      title: 'Are you sure?',
+      title: "Are you sure?",
       text: "You won't be able to revert this!",
-      icon: 'warning',
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, delete it!'
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
     });
 
     if (result.isConfirmed) {
@@ -272,14 +277,13 @@ const VoucherForm = () => {
       ) : (
         <div className="voucher-container">
           <div className="user-info">
-            {/* Display user image and name next to logout */}
             {user && (
               <div className="user-profile">
                 <img
                   src={user.picture}
                   alt={user.name}
                   className="user-avatar"
-                  referrerPolicy="no-referrer" // Required for Google profile pics
+                  referrerPolicy="no-referrer"
                 />
                 <span className="user-name">{user.name}</span>
               </div>
@@ -344,7 +348,7 @@ const VoucherForm = () => {
                       <p>Company: {voucher.company}</p>
                       <p>Date: {voucher.date}</p>
                       <p>Pay To: {voucher.payTo}</p>
-                      <p>Account Head: {voucher.accountHead}</p>
+                      <p>Account Head: {voucher.accountHead || "N/A"}</p>
                       <p>Towards: {voucher.account}</p>
                       <p>Amount: {voucher.amount}</p>
                       <a href={voucher.pdfLink} target="_blank" rel="noopener noreferrer">
@@ -383,7 +387,7 @@ const VoucherForm = () => {
             </div>
           ) : (
             <>
-              <h2>Create Voucher</h2>
+              <h2>{formData.voucherNo ? "Edit Voucher" : "Create Voucher"}</h2>
               <form id="voucherForm" onSubmit={handleSubmit}>
                 <div className="wrapper">
                   <div className="form-group">
@@ -535,7 +539,7 @@ const VoucherForm = () => {
                     className="submit-button"
                     disabled={formLoading}
                   >
-                    {formLoading ? "Submitting..." : "Submit"}
+                    {formLoading ? "Submitting..." : formData.voucherNo ? "Update" : "Submit"}
                   </button>
                   <button
                     type="button"
