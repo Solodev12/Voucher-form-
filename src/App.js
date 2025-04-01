@@ -39,7 +39,7 @@ const VoucherForm = () => {
   const [dateFilter, setDateFilter] = useState("");
   const [sortAmount, setSortAmount] = useState("");
 
-  const url = process.env.REACT_APP_API_URL || "http://localhost:3001/api";
+  const url = process.env.REACT_APP_API_URL || "http://localhost:3001";
 
   const handleLoginSuccess = async (response) => {
     const accessToken = response.access_token;
@@ -121,14 +121,20 @@ const VoucherForm = () => {
       }
     };
 
-    if (formData.filter && !formData.voucherNo) { // Only fetch if voucherNo is empty
+    // Fetch new voucher number only if not editing (voucherNo is empty) and filter is set
+    if (formData.filter && !formData.voucherNo) {
       fetchVoucherNumber(formData.filter);
     }
   }, [formData.filter, token, showVouchers]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+      // Reset voucherNo when filter changes to ensure a fresh fetch
+      ...(name === "filter" && { voucherNo: "" }),
+    }));
   };
 
   const convertAmountToWords = () => {
@@ -161,24 +167,23 @@ const VoucherForm = () => {
     try {
       setFormLoading(true);
       let response;
-      const isEditing = formData.voucherNo && vouchers.some(v => v.voucherNo === formData.voucherNo);
+      const isEditing = vouchers.some((v) => v.voucherNo === formData.voucherNo && v.company === formData.filter);
       if (isEditing) {
+        const voucherToEdit = vouchers.find((v) => v.voucherNo === formData.voucherNo && v.company === formData.filter);
         response = await axios.put(
-          `${url}/vouchers/${formData.voucherNo}`,
+          `${url}/edit-voucher/${voucherToEdit._id}`, // Updated endpoint
           formData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
-        response = await axios.post(
-          `${url}/submit`,
-          formData,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        response = await axios.post(`${url}/submit`, formData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
       }
 
       if (response.status === 200 || response.status === 201) {
         toast.success(response.data.message);
-        setFormData(initialValues); // Reset form
+        setFormData({ ...initialValues, filter: "" }); // Reset form fully, including filter
         if (showVouchers) fetchVouchers(); // Refresh voucher list
       } else {
         throw new Error(response.data.error || "Unknown error");
@@ -195,7 +200,7 @@ const VoucherForm = () => {
     setFormData({
       filter: voucher.company,
       voucherNo: voucher.voucherNo,
-      date: voucher.date.split('T')[0],
+      date: voucher.date.split("T")[0],
       payTo: voucher.payTo,
       accountHead: voucher.accountHead || "",
       account: voucher.account,
@@ -226,7 +231,7 @@ const VoucherForm = () => {
         await axios.delete(`${url}/vouchers/${voucherNo}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setVouchers(vouchers.filter(voucher => voucher.voucherNo !== voucherNo));
+        setVouchers(vouchers.filter((voucher) => voucher.voucherNo !== voucherNo));
         toast.success("Voucher deleted successfully");
       } catch (error) {
         console.error("Error deleting voucher:", error.message);
