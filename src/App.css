@@ -570,3 +570,63 @@ div.form-group.m0 {
     height: 100vh;
   }
 }
+
+
+/* User Profile Section */
+.user-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-name {
+  font-size: 18px;
+  color: #4b4b4b;
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media only screen and (max-width: 480px) {
+  .user-profile {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .user-avatar {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .user-name {
+    font-size: 16px;
+  }
+}
+
+@media only screen and (min-width: 481px) and (max-width: 600px) {
+  .user-avatar {
+    width: 35px;
+    height: 35px;
+  }
+}
+
+@media only screen and (min-width: 601px) and (max-width: 900px) {
+  .user-info {
+    flex-direction: row;
+  }
+}
