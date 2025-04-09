@@ -454,6 +454,7 @@ const VoucherForm = () => {
                     name="payTo"
                     value={formData.payTo}
                     onChange={handleChange}
+                    placeholder="Enter recipient name or entity"
                     required
                   />
                 </div>
@@ -465,6 +466,8 @@ const VoucherForm = () => {
                     name="accountHead"
                     value={formData.accountHead}
                     onChange={handleChange}
+                    placeholder="e.g., Expenses, Salary"
+                    required
                   />
                 </div>
                 <div className="form-group">
@@ -475,6 +478,7 @@ const VoucherForm = () => {
                     name="account"
                     value={formData.account}
                     onChange={handleChange}
+                    placeholder="e.g., Office Supplies, Rent"
                     required
                   />
                 </div>
