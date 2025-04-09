@@ -283,7 +283,7 @@ const VoucherForm = () => {
                   className="user-avatar"
                   referrerPolicy="no-referrer"
                 />
-                <span className="user-name">{user.name} ({user.email})</span>
+                <span className="user-name">{user.name} </span>
               </div>
             )}
             <button onClick={() => setToken(null)} className="logout-button">
