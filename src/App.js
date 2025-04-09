@@ -20,6 +20,7 @@ const initialValues = {
   payTo: "",
   accountHead: "",
   account: "",
+  transactionType: "UPI", // Default to UPI
   amount: "",
   amountRs: "",
   checkedBy: "",
@@ -64,7 +65,7 @@ const VoucherForm = () => {
       toast.error("Google Login Failed");
     },
     scope: "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive",
-    redirect_uri: "http://localhost:3000", // Update this for production
+    redirect_uri: "http://localhost:3000", // Update for production
   });
 
   const fetchVouchers = async () => {
@@ -91,8 +92,7 @@ const VoucherForm = () => {
 
   useEffect(() => {
     const keepServerAlive = () => {
-      axios
-        .get(`${url}/ping`)
+      axios.get(`${url}/ping`)
         .then((response) => console.log("Server is active:", response.data.message))
         .catch((error) => console.error("Error pinging server:", error));
     };
@@ -121,7 +121,6 @@ const VoucherForm = () => {
       }
     };
 
-    // Fetch new voucher number only if not editing (voucherNo is empty) and filter is set
     if (formData.filter && !formData.voucherNo) {
       fetchVoucherNumber(formData.filter);
     }
@@ -132,7 +131,6 @@ const VoucherForm = () => {
     setFormData((prevData) => ({
       ...prevData,
       [name]: value,
-      // Reset voucherNo when filter changes to ensure a fresh fetch
       ...(name === "filter" && { voucherNo: "" }),
     }));
   };
@@ -140,10 +138,9 @@ const VoucherForm = () => {
   const convertAmountToWords = () => {
     const amount = parseFloat(formData.amount);
     if (!isNaN(amount)) {
-      const amountWords = convertNumberToWords(amount);
       setFormData((prevData) => ({
         ...prevData,
-        amountRs: amountWords,
+        amountRs: convertNumberToWords(amount),
       }));
     } else {
       setFormData((prevData) => ({
@@ -170,11 +167,9 @@ const VoucherForm = () => {
       const isEditing = vouchers.some((v) => v.voucherNo === formData.voucherNo && v.company === formData.filter);
       if (isEditing) {
         const voucherToEdit = vouchers.find((v) => v.voucherNo === formData.voucherNo && v.company === formData.filter);
-        response = await axios.put(
-          `${url}/edit-voucher/${voucherToEdit._id}`, // Updated endpoint
-          formData,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        response = await axios.put(`${url}/edit-voucher/${voucherToEdit._id}`, formData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
       } else {
         response = await axios.post(`${url}/submit`, formData, {
           headers: { Authorization: `Bearer ${token}` },
@@ -183,8 +178,8 @@ const VoucherForm = () => {
 
       if (response.status === 200 || response.status === 201) {
         toast.success(response.data.message);
-        setFormData({ ...initialValues, filter: "" }); // Reset form fully, including filter
-        if (showVouchers) fetchVouchers(); // Refresh voucher list
+        setFormData({ ...initialValues, filter: "" });
+        if (showVouchers) fetchVouchers();
       } else {
         throw new Error(response.data.error || "Unknown error");
       }
@@ -204,6 +199,7 @@ const VoucherForm = () => {
       payTo: voucher.payTo,
       accountHead: voucher.accountHead || "",
       account: voucher.account,
+      transactionType: voucher.transactionType || "UPI", // Default to UPI if missing
       amount: voucher.amount,
       amountRs: convertNumberToWords(parseFloat(voucher.amount)),
       checkedBy: voucher.checkedBy || "",
@@ -244,16 +240,13 @@ const VoucherForm = () => {
 
   const toggleVouchers = () => {
     setShowVouchers(!showVouchers);
-    if (!showVouchers) {
-      fetchVouchers();
-    }
+    if (!showVouchers) fetchVouchers();
   };
 
   useEffect(() => {
     const handler = setTimeout(() => {
       if (showVouchers) fetchVouchers();
     }, 300);
-
     return () => clearTimeout(handler);
   }, [companyFilter, dateFilter, sortAmount, showVouchers, token]);
 
@@ -290,7 +283,7 @@ const VoucherForm = () => {
                   className="user-avatar"
                   referrerPolicy="no-referrer"
                 />
-                <span className="user-name">{user.name}</span>
+                <span className="user-name">{user.name} ({user.email})</span>
               </div>
             )}
             <button onClick={() => setToken(null)} className="logout-button">
@@ -355,6 +348,7 @@ const VoucherForm = () => {
                       <p>Pay To: {voucher.payTo}</p>
                       <p>Account Head: {voucher.accountHead || "N/A"}</p>
                       <p>Towards: {voucher.account}</p>
+                      <p>Transaction Type: {voucher.transactionType}</p>
                       <p>Amount: {voucher.amount}</p>
                       <a href={voucher.pdfLink} target="_blank" rel="noopener noreferrer">
                         View PDF
@@ -369,16 +363,10 @@ const VoucherForm = () => {
                         View Sheet
                       </a>
                       <div className="voucher-actions">
-                        <button
-                          className="edit-button"
-                          onClick={() => handleEditVoucher(voucher)}
-                        >
+                        <button className="edit-button" onClick={() => handleEditVoucher(voucher)}>
                           Edit
                         </button>
-                        <button
-                          className="delete-button"
-                          onClick={() => handleDeleteVoucher(voucher.voucherNo)}
-                        >
+                        <button className="delete-button" onClick={() => handleDeleteVoucher(voucher.voucherNo)}>
                           Delete
                         </button>
                       </div>
@@ -412,11 +400,7 @@ const VoucherForm = () => {
                     <div id="filterImageContainer">
                       <img
                         id="filterImage"
-                        src={
-                          formData.filter
-                            ? `/${filterImageMap[formData.filter]}`
-                            : ""
-                        }
+                        src={formData.filter ? `/${filterImageMap[formData.filter]}` : ""}
                         alt={formData.filter ? formData.filter : "Placeholder"}
                         style={{ display: formData.filter ? "block" : "none" }}
                       />
@@ -467,7 +451,6 @@ const VoucherForm = () => {
                     value={formData.accountHead}
                     onChange={handleChange}
                     placeholder="e.g., Expenses, Salary"
-                    required
                   />
                 </div>
                 <div className="form-group">
@@ -481,6 +464,42 @@ const VoucherForm = () => {
                     placeholder="e.g., Office Supplies, Rent"
                     required
                   />
+                </div>
+                <div className="form-group">
+                  <label>Transaction Type</label>
+                  <div className="radio-group">
+                    <label className="radio-label">
+                      <input
+                        type="radio"
+                        name="transactionType"
+                        value="UPI"
+                        checked={formData.transactionType === "UPI"}
+                        onChange={handleChange}
+                        required
+                      />
+                      UPI
+                    </label>
+                    <label className="radio-label">
+                      <input
+                        type="radio"
+                        name="transactionType"
+                        value="Cash"
+                        checked={formData.transactionType === "Cash"}
+                        onChange={handleChange}
+                      />
+                      Cash
+                    </label>
+                    <label className="radio-label">
+                      <input
+                        type="radio"
+                        name="transactionType"
+                        value="Account"
+                        checked={formData.transactionType === "Account"}
+                        onChange={handleChange}
+                      />
+                      Account
+                    </label>
+                  </div>
                 </div>
                 <div className="form-group">
                   <label htmlFor="amount">Amount Rs.</label>
@@ -543,18 +562,10 @@ const VoucherForm = () => {
                   </div>
                 </div>
                 <div className="form-group m0">
-                  <button
-                    type="submit"
-                    className="submit-button"
-                    disabled={formLoading}
-                  >
+                  <button type="submit" className="submit-button" disabled={formLoading}>
                     {formLoading ? "Submitting..." : formData.voucherNo ? "Update" : "Submit"}
                   </button>
-                  <button
-                    type="button"
-                    className="view-vouchers-button"
-                    onClick={toggleVouchers}
-                  >
+                  <button type="button" className="view-vouchers-button" onClick={toggleVouchers}>
                     View Your Vouchers
                   </button>
                 </div>
