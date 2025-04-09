@@ -616,7 +616,7 @@ div.form-group.m0 {
 }
 
 .radio-label input[type="radio"] {
-  margin: 0;
+  margin: 5px;
 }
 /* Responsive adjustments */
 @media only screen and (max-width: 480px) {
