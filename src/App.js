@@ -450,7 +450,7 @@ const VoucherForm = () => {
                     name="accountHead"
                     value={formData.accountHead}
                     onChange={handleChange}
-                    placeholder="e.g., Expenses, Salary"
+                    placeholder="Example: Expenses, Salary"
                   />
                 </div>
                 <div className="form-group">
@@ -461,7 +461,7 @@ const VoucherForm = () => {
                     name="account"
                     value={formData.account}
                     onChange={handleChange}
-                    placeholder="e.g., Office Supplies, Rent"
+                    placeholder="Example: Office Supplies, Rent"
                     required
                   />
                 </div>
@@ -510,7 +510,7 @@ const VoucherForm = () => {
                     value={formData.amount}
                     onChange={handleChange}
                     className="amount-input"
-                    placeholder="amount in numbers"
+                    placeholder="Enter amount in numbers"
                     min="0"
                     step="0.01"
                     required
@@ -524,7 +524,7 @@ const VoucherForm = () => {
                       id="amountRs"
                       name="amountRs"
                       value={formData.amountRs}
-                      placeholder="amount in words"
+                      placeholder="Convert amount in words"
                       readOnly
                     />
                   </div>
