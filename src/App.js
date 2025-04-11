@@ -40,7 +40,7 @@ const VoucherForm = () => {
   const [dateFilter, setDateFilter] = useState("");
   const [sortAmount, setSortAmount] = useState("");
 
-  const url = process.env.REACT_APP_API_URL || "http://localhost:3001";
+  const url = process.env.REACT_APP_API_URL || "https://form-server-6ror.onrender.com";
 
   // Configure Axios to include credentials (cookies) by default
   axios.defaults.withCredentials = true;
@@ -48,15 +48,19 @@ const VoucherForm = () => {
   // Check session on component mount
   const checkSession = async () => {
     try {
-      const response = await axios.get(`${url}/check-session`);
-      if (response.data.loggedIn) {
-        setUser({ name: response.data.email, email: response.data.email }); // Minimal user info from session
-        toast.success(`Welcome back, ${response.data.email}`);
-        return true;
-      }
-      return false;
+      const storedToken = localStorage.getItem("token");
+      const response = await axios.get(`${url}/check-session`, {
+        headers: storedToken ? { Authorization: `Bearer ${storedToken}` } : {},
+      });
+      setUser({ email: response.data.email }); // Set user from session email
+      setToken(storedToken); // Restore token if available
+      toast.success(`Welcome back, ${response.data.email}`);
+      return true;
     } catch (error) {
       console.error("Session check failed:", error.message);
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem("token");
       return false;
     }
   };
@@ -64,21 +68,20 @@ const VoucherForm = () => {
   const handleLoginSuccess = async (response) => {
     const accessToken = response.access_token;
     setToken(accessToken);
+    localStorage.setItem("token", accessToken); // Store token locally
 
     try {
-      const userInfo = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo", {
+      // Authenticate with backend to establish session
+      const authResponse = await axios.get(`${url}/check-session`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      setUser(userInfo.data);
-      toast.success(`Logged in as ${userInfo.data.name}`);
-
-      // Trigger an initial request to set the session
-      await axios.get(`${url}/get-voucher-no?filter=Contentstack`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      setUser({ email: authResponse.data.email });
+      toast.success(`Logged in as ${authResponse.data.email}`);
     } catch (error) {
-      console.error("Error fetching user info:", error);
-      toast.error("Failed to fetch user info");
+      console.error("Error authenticating with backend:", error.message);
+      toast.error("Login failed: " + (error.response?.data?.error || error.message));
+      setToken(null);
+      localStorage.removeItem("token");
     }
   };
 
@@ -89,7 +92,7 @@ const VoucherForm = () => {
       toast.error("Google Login Failed");
     },
     scope: "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive",
-    redirect_uri: "http://localhost:3000", // Update for production
+    redirect_uri: "https://voucher-form-frontend-nu.vercel.app", // Update for production
   });
 
   const fetchVouchers = async () => {
@@ -101,7 +104,9 @@ const VoucherForm = () => {
         ...(sortAmount && { sort: sortAmount }),
       }).toString();
 
-      const response = await axios.get(`${url}/vouchers?${queryParams}`);
+      const response = await axios.get(`${url}/vouchers?${queryParams}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       setVouchers(response.data);
     } catch (error) {
       console.error("Error fetching vouchers:", error.message);
@@ -113,7 +118,8 @@ const VoucherForm = () => {
 
   useEffect(() => {
     const keepServerAlive = () => {
-      axios.get(`${url}/ping`)
+      axios
+        .get(`${url}/ping`)
         .then((response) => console.log("Server is active:", response.data.message))
         .catch((error) => console.error("Error pinging server:", error));
     };
@@ -123,10 +129,7 @@ const VoucherForm = () => {
 
   useEffect(() => {
     const initializeApp = async () => {
-      const isLoggedIn = await checkSession();
-      if (!isLoggedIn) {
-        setToken(null); // Ensure login screen is shown if no session
-      }
+      await checkSession();
     };
     initializeApp();
   }, []);
@@ -137,7 +140,7 @@ const VoucherForm = () => {
         try {
           setLoading(true);
           const response = await axios.get(`${url}/get-voucher-no?filter=${filter}`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {}, // Only send token if available
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
           });
           setFormData((prevData) => ({
             ...prevData,
@@ -255,7 +258,9 @@ const VoucherForm = () => {
     if (result.isConfirmed) {
       try {
         setLoading(true);
-        await axios.delete(`${url}/vouchers/${voucherNo}`);
+        await axios.delete(`${url}/vouchers/${voucherNo}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         setVouchers(vouchers.filter((voucher) => voucher.voucherNo !== voucherNo));
         toast.success("Voucher deleted successfully");
       } catch (error) {
@@ -275,6 +280,7 @@ const VoucherForm = () => {
       setFormData(initialValues);
       setVouchers([]);
       setShowVouchers(false);
+      localStorage.removeItem("token"); // Clear stored token
       toast.success("Logged out successfully");
     } catch (error) {
       console.error("Error logging out:", error.message);
@@ -323,11 +329,11 @@ const VoucherForm = () => {
               <div className="user-profile">
                 <img
                   src={user.picture || "https://via.placeholder.com/40"}
-                  alt={user.name || user.email}
+                  alt={user.email}
                   className="user-avatar"
                   referrerPolicy="no-referrer"
                 />
-                <span className="user-name">{user.name || user.email} </span>
+                <span className="user-name">{user.email} </span>
               </div>
             )}
             <button onClick={handleLogout} className="logout-button">
