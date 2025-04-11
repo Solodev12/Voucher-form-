@@ -42,6 +42,25 @@ const VoucherForm = () => {
 
   const url = process.env.REACT_APP_API_URL || "http://localhost:3001";
 
+  // Configure Axios to include credentials (cookies) by default
+  axios.defaults.withCredentials = true;
+
+  // Check session on component mount
+  const checkSession = async () => {
+    try {
+      const response = await axios.get(`${url}/check-session`);
+      if (response.data.loggedIn) {
+        setUser({ name: response.data.email, email: response.data.email }); // Minimal user info from session
+        toast.success(`Welcome back, ${response.data.email}`);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Session check failed:", error.message);
+      return false;
+    }
+  };
+
   const handleLoginSuccess = async (response) => {
     const accessToken = response.access_token;
     setToken(accessToken);
@@ -52,6 +71,11 @@ const VoucherForm = () => {
       });
       setUser(userInfo.data);
       toast.success(`Logged in as ${userInfo.data.name}`);
+
+      // Trigger an initial request to set the session
+      await axios.get(`${url}/get-voucher-no?filter=Contentstack`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
     } catch (error) {
       console.error("Error fetching user info:", error);
       toast.error("Failed to fetch user info");
@@ -69,7 +93,6 @@ const VoucherForm = () => {
   });
 
   const fetchVouchers = async () => {
-    if (!token) return;
     try {
       setLoading(true);
       const queryParams = new URLSearchParams({
@@ -78,13 +101,11 @@ const VoucherForm = () => {
         ...(sortAmount && { sort: sortAmount }),
       }).toString();
 
-      const response = await axios.get(`${url}/vouchers?${queryParams}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(`${url}/vouchers?${queryParams}`);
       setVouchers(response.data);
     } catch (error) {
       console.error("Error fetching vouchers:", error.message);
-      toast.error("Failed to fetch vouchers: " + error.message);
+      toast.error("Failed to fetch vouchers: " + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }
@@ -101,12 +122,22 @@ const VoucherForm = () => {
   }, [url]);
 
   useEffect(() => {
+    const initializeApp = async () => {
+      const isLoggedIn = await checkSession();
+      if (!isLoggedIn) {
+        setToken(null); // Ensure login screen is shown if no session
+      }
+    };
+    initializeApp();
+  }, []);
+
+  useEffect(() => {
     const fetchVoucherNumber = async (filter) => {
-      if (filter && token && !showVouchers) {
+      if (filter && !showVouchers) {
         try {
           setLoading(true);
           const response = await axios.get(`${url}/get-voucher-no?filter=${filter}`, {
-            headers: { Authorization: `Bearer ${token}` },
+            headers: token ? { Authorization: `Bearer ${token}` } : {}, // Only send token if available
           });
           setFormData((prevData) => ({
             ...prevData,
@@ -114,7 +145,7 @@ const VoucherForm = () => {
           }));
         } catch (error) {
           console.error("Error fetching voucher number:", error.message);
-          toast.error("Failed to fetch voucher number: " + error.message);
+          toast.error("Failed to fetch voucher number: " + (error.response?.data?.error || error.message));
         } finally {
           setLoading(false);
         }
@@ -124,7 +155,7 @@ const VoucherForm = () => {
     if (formData.filter && !formData.voucherNo) {
       fetchVoucherNumber(formData.filter);
     }
-  }, [formData.filter, token, showVouchers]);
+  }, [formData.filter, showVouchers, token]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -156,8 +187,8 @@ const VoucherForm = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!token) {
-      toast.error("Please log in with Google first");
+    if (!user) {
+      toast.error("Please log in first");
       return;
     }
 
@@ -168,11 +199,11 @@ const VoucherForm = () => {
       if (isEditing) {
         const voucherToEdit = vouchers.find((v) => v.voucherNo === formData.voucherNo && v.company === formData.filter);
         response = await axios.put(`${url}/edit-voucher/${voucherToEdit._id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
       } else {
         response = await axios.post(`${url}/submit`, formData, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
       }
 
@@ -199,7 +230,7 @@ const VoucherForm = () => {
       payTo: voucher.payTo,
       accountHead: voucher.accountHead || "",
       account: voucher.account,
-      transactionType: voucher.transactionType || "UPI", // Default to UPI if missing
+      transactionType: voucher.transactionType || "UPI",
       amount: voucher.amount,
       amountRs: convertNumberToWords(parseFloat(voucher.amount)),
       checkedBy: voucher.checkedBy || "",
@@ -224,17 +255,30 @@ const VoucherForm = () => {
     if (result.isConfirmed) {
       try {
         setLoading(true);
-        await axios.delete(`${url}/vouchers/${voucherNo}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await axios.delete(`${url}/vouchers/${voucherNo}`);
         setVouchers(vouchers.filter((voucher) => voucher.voucherNo !== voucherNo));
         toast.success("Voucher deleted successfully");
       } catch (error) {
         console.error("Error deleting voucher:", error.message);
-        toast.error("Failed to delete voucher: " + error.message);
+        toast.error("Failed to delete voucher: " + (error.response?.data?.error || error.message));
       } finally {
         setLoading(false);
       }
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await axios.post(`${url}/logout`);
+      setToken(null);
+      setUser(null);
+      setFormData(initialValues);
+      setVouchers([]);
+      setShowVouchers(false);
+      toast.success("Logged out successfully");
+    } catch (error) {
+      console.error("Error logging out:", error.message);
+      toast.error("Failed to log out: " + (error.response?.data?.error || error.message));
     }
   };
 
@@ -248,7 +292,7 @@ const VoucherForm = () => {
       if (showVouchers) fetchVouchers();
     }, 300);
     return () => clearTimeout(handler);
-  }, [companyFilter, dateFilter, sortAmount, showVouchers, token]);
+  }, [companyFilter, dateFilter, sortAmount, showVouchers]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -260,7 +304,7 @@ const VoucherForm = () => {
   return (
     <>
       <ToastContainer />
-      {!token ? (
+      {!user ? (
         <div className="login-container">
           <div className="login-image">
             <img src="/login-bg.jpg" alt="Login Background" />
@@ -278,15 +322,15 @@ const VoucherForm = () => {
             {user && (
               <div className="user-profile">
                 <img
-                  src={user.picture}
-                  alt={user.name}
+                  src={user.picture || "https://via.placeholder.com/40"}
+                  alt={user.name || user.email}
                   className="user-avatar"
                   referrerPolicy="no-referrer"
                 />
-                <span className="user-name">{user.name} </span>
+                <span className="user-name">{user.name || user.email} </span>
               </div>
             )}
-            <button onClick={() => setToken(null)} className="logout-button">
+            <button onClick={handleLogout} className="logout-button">
               Logout
             </button>
           </div>
