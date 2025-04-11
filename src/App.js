@@ -52,9 +52,13 @@ const VoucherForm = () => {
       const response = await axios.get(`${url}/check-session`, {
         headers: storedToken ? { Authorization: `Bearer ${storedToken}` } : {},
       });
-      setUser({ email: response.data.email }); // Set user from session email
-      setToken(storedToken); // Restore token if available
-      toast.success(`Welcome back, ${response.data.email}`);
+      setUser({
+        email: response.data.email,
+        name: response.data.name,
+        picture: response.data.picture,
+      });
+      setToken(storedToken);
+      toast.success(`Welcome back, ${response.data.name}`);
       return true;
     } catch (error) {
       console.error("Session check failed:", error.message);
@@ -68,15 +72,18 @@ const VoucherForm = () => {
   const handleLoginSuccess = async (response) => {
     const accessToken = response.access_token;
     setToken(accessToken);
-    localStorage.setItem("token", accessToken); // Store token locally
+    localStorage.setItem("token", accessToken);
 
     try {
-      // Authenticate with backend to establish session
       const authResponse = await axios.get(`${url}/check-session`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      setUser({ email: authResponse.data.email });
-      toast.success(`Logged in as ${authResponse.data.email}`);
+      setUser({
+        email: authResponse.data.email,
+        name: authResponse.data.name,
+        picture: authResponse.data.picture,
+      });
+      toast.success(`Logged in as ${authResponse.data.name}`);
     } catch (error) {
       console.error("Error authenticating with backend:", error.message);
       toast.error("Login failed: " + (error.response?.data?.error || error.message));
@@ -92,7 +99,7 @@ const VoucherForm = () => {
       toast.error("Google Login Failed");
     },
     scope: "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive",
-    redirect_uri: "https://voucher-form-frontend-nu.vercel.app", // Update for production
+    redirect_uri: "https://voucher-form-frontend-nu.vercel.app",
   });
 
   const fetchVouchers = async () => {
@@ -280,7 +287,7 @@ const VoucherForm = () => {
       setFormData(initialValues);
       setVouchers([]);
       setShowVouchers(false);
-      localStorage.removeItem("token"); // Clear stored token
+      localStorage.removeItem("token");
       toast.success("Logged out successfully");
     } catch (error) {
       console.error("Error logging out:", error.message);
@@ -328,12 +335,12 @@ const VoucherForm = () => {
             {user && (
               <div className="user-profile">
                 <img
-                  src={user.picture}
-                  alt={user.email}
+                  src={user.picture || "https://via.placeholder.com/40"}
+                  alt={user.name}
                   className="user-avatar"
                   referrerPolicy="no-referrer"
                 />
-                <span className="user-name">{user.name} </span>
+                <span className="user-name">{user.name}</span>
               </div>
             )}
             <button onClick={handleLogout} className="logout-button">
