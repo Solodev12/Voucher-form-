@@ -335,7 +335,7 @@ const VoucherForm = () => {
             {user && (
               <div className="user-profile">
                 <img
-                  src={user.picture || "https://via.placeholder.com/40"}
+                  src={user.picture}
                   alt={user.name}
                   className="user-avatar"
                   referrerPolicy="no-referrer"
